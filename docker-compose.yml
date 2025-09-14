@@ -1,0 +1,63 @@
+
+services:
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    command: ["mongod", "--quiet", "--logpath", "/dev/null"]
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  clamd:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    environment:
+      - CLAMD_STARTUP_TIMEOUT=120
+    ports:
+      - "3310:3310"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/autotranscribe
+      - CLAMAV_HOST=clamd
+      - CLAMAV_PORT=3310
+    depends_on:
+      - mongo
+      - clamd
+    ports:
+      - "8080:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  client:
+    build: ./client
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "3000:80"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mongo-data:
