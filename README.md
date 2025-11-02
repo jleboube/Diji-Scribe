@@ -1,15 +1,17 @@
-AutoTranscribe
+# AutoTranscribe
 
-Overview
+## Overview
 - Secure upload and transcription web app with encryption, virus scanning, and S3-compatible storage (Akamai Linode Object Storage).
 - Stack: React (Vite) client, Node/Express API, MongoDB, OpenAI Whisper (with optional Deepgram and AssemblyAI providers), ClamAV, Docker Compose.
 
-Prerequisites
+<a href="https://www.buymeacoffee.com/muscl3n3rd" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 37px !important;width: 170px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+
+### Prerequisites
 - A VM with Docker Engine and Docker Compose installed.
 - Linode Object Storage bucket and access keys.
 - OpenAI API key for Whisper (or set SKIP_TRANSCRIPTION=true), or a Deepgram API key, or an AssemblyAI API key.
 
-Setup
+### Setup
 - Copy `.env.example` to `.env` and fill values:
   - `JWT_SECRET` a long random string
   - `S3_ENDPOINT` for your Linode region
@@ -20,17 +22,17 @@ Setup
   - Optional Deepgram provider: set `DEEPGRAM_API_KEY` (and optionally `DEEPGRAM_MODEL`)
   - Optional AssemblyAI provider: set `ASSEMBLYAI_API_KEY` (and optionally `ASSEMBLYAI_MODEL`)
 
-Build and Run (on your VM)
+### Build and Run (on your VM)
 - `docker compose up -d --build`
 - Open client at `http://<vm-host>:3000` and API health at `http://<vm-host>:8080/api/health`.
 
-Services
+### Services
 - `mongo`: MongoDB 6 with persisted `mongo-data` volume.
 - `clamd`: ClamAV daemon on port 3310.
 - `server`: Express API at `:8080`.
 - `client`: Nginx serving SPA at `:3000` and proxying `/api` to `server`.
 
-API Notes
+## API Notes
 - Registration: `POST /api/auth/register` with `{ email, password }` (min 8 chars).
   - Registration now requires a code: `{ email, password, code }`.
   - Codes are single-use, auto-generated at server startup and topped up automatically in the background.
@@ -42,16 +44,16 @@ API Notes
 - Login: `POST /api/auth/login` returns `{ token }`; send `Authorization: Bearer <token>`.
 - Upload: `POST /api/upload` multipart fields `file`, `hasPII`, `hasPCI`, optional `provider` = `auto` | `openai` | `deepgram` (default `auto`).
 
-Security/Compliance
+### Security/Compliance
 - AES-256-CBC encryption is applied when either PII or PCI flag is true. Keys/IV are stored in the `File` record for demo purposes; use a KMS in production.
 - Virus scanning via ClamAV; set `SKIP_VIRUS_SCAN=true` for development.
 
-Troubleshooting
+### Troubleshooting
 - Ensure `LINODE_*` vars and bucket exist; API returns 500 if not configured.
 - If ClamAV takes time to update defs, first run may be slower; increase `CLAMD_STARTUP_TIMEOUT` if needed.
 - For cross-origin local dev without Docker, API enables CORS; set client axios base to `http://localhost:8080/api` or run via Docker where Nginx proxies `/api`.
 
-Transcription Providers
+### Transcription Providers
 - Primary: OpenAI Whisper (`OPENAI_API_KEY`).
 - Fallback: Deepgram (`DEEPGRAM_API_KEY`) and/or AssemblyAI (`ASSEMBLYAI_API_KEY`). In `provider=auto`, the server tries Whisper first (within size), then Deepgram, then AssemblyAI.
 - Force provider: Set `provider=openai` to only use Whisper (no fallback). Set `provider=deepgram` to only use Deepgram. Set `provider=assemblyai` to only use AssemblyAI.
